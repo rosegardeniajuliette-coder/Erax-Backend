@@ -12,7 +12,7 @@ const getSecureUser = async (req, res) => {
 };
 
 // ==========================================
-// POST /api/withdrawal/request - UPDATED: Can withdraw all availableLiquidity
+// POST /api/withdrawal/request - UPDATED FOR CRYPTO
 // ==========================================
 export const requestWithdrawal = async (req, res) => {
   try {
@@ -25,14 +25,18 @@ export const requestWithdrawal = async (req, res) => {
       });
     }
 
-    const { amount, accountNumber, bankName, accountName } = req.body;
+    // ✅ UPDATED: Accept crypto fields instead of bank fields
+    const { amount, walletAddress, cryptocurrency, network } = req.body;
 
     console.log("💸 [WITHDRAWAL REQUEST]", { 
       email: user.email, 
-      amount 
+      amount,
+      cryptocurrency,
+      network
     });
 
-    if (!amount || !accountNumber || !bankName || !accountName) {
+    // ✅ UPDATED: Validate crypto fields
+    if (!amount || !walletAddress || !cryptocurrency || !network) {
       return res.status(400).json({
         success: false,
         message: "All fields are required"
@@ -47,7 +51,7 @@ export const requestWithdrawal = async (req, res) => {
       });
     }
 
-    // ✅ Check eligibility: Must have at least one investment that's at least 1 month old
+    // Check eligibility: Must have at least one investment that's at least 1 month old
     const oldestInvestment = await Investment.findOne({
       user: user._id,
       status: { $in: ['active', 'auto_renewed', 'claimed'] }
@@ -74,7 +78,7 @@ export const requestWithdrawal = async (req, res) => {
       });
     }
 
-    // ✅ UPDATED: Can withdraw up to 100% of availableLiquidity (all profit)
+    // Can withdraw up to 100% of availableLiquidity (all profit)
     const availableBalance = user.balances?.availableLiquidity || 0;
 
     if (amountNum > availableBalance) {
@@ -102,13 +106,14 @@ export const requestWithdrawal = async (req, res) => {
 
     const transactionId = `WD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
+    // ✅ UPDATED: Save crypto fields to the database
     const withdrawal = await Withdrawal.create({
       user: user._id,
       email: user.email,
       amount: amountNum,
-      accountNumber: accountNumber,
-      bankName: bankName,
-      accountName: accountName,
+      walletAddress: walletAddress,       // ✅ Added
+      cryptocurrency: cryptocurrency,     // ✅ Added
+      network: network,                   // ✅ Added
       status: 'pending',
       countdownEndsAt: countdownEndsAt,
       transactionId: transactionId
@@ -119,9 +124,9 @@ export const requestWithdrawal = async (req, res) => {
         userEmail: user.email,
         userName: user.fullName,
         amount: amountNum,
-        accountNumber: accountNumber,
-        bankName: bankName,
-        accountName: accountName,
+        walletAddress: walletAddress,     // ✅ Updated email payload
+        cryptocurrency: cryptocurrency,   // ✅ Updated email payload
+        network: network,                 // ✅ Updated email payload
         transactionId: transactionId,
         requestedAt: new Date()
       });
@@ -227,8 +232,9 @@ export const getWithdrawalHistory = async (req, res) => {
       status: w.status,
       requestedAt: w.requestedAt,
       completedAt: w.completedAt,
-      bankName: w.bankName,
-      accountNumber: w.accountNumber.substring(0, 4) + '****'
+      cryptocurrency: w.cryptocurrency, // ✅ Added
+      network: w.network,               // ✅ Added
+      walletAddress: w.walletAddress ? w.walletAddress.substring(0, 6) + '****' + w.walletAddress.substring(w.walletAddress.length - 4) : 'N/A'
     }));
 
     res.status(200).json({
@@ -299,7 +305,7 @@ export const checkEligibility = async (req, res) => {
       daysSinceFirstInvestment: daysSinceFirstInvestment,
       availableBalance: availableBalance.toFixed(2),
       lockedInvestment: (user.balances?.lockedInvestment || 0).toFixed(2),
-      maxWithdrawal: availableBalance.toFixed(2) // ✅ Can withdraw all available
+      maxWithdrawal: availableBalance.toFixed(2)
     });
 
   } catch (error) {
