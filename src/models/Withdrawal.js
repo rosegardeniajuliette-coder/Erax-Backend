@@ -22,22 +22,41 @@ const WithdrawalSchema = new mongoose.Schema({
     min: [50, "Minimum withdrawal is $50"]
   },
   
-  // Bank details
+  // ✅ ADDED: Crypto withdrawal details
+  walletAddress: {
+    type: String,
+    required: false, // Optional if using bank
+    trim: true
+  },
+  
+  cryptocurrency: {
+    type: String,
+    required: false,
+    trim: true
+  },
+  
+  network: {
+    type: String,
+    required: false,
+    trim: true
+  },
+
+  // Bank details (Made optional so crypto withdrawals work)
   accountNumber: {
     type: String,
-    required: true,
+    required: false, 
     trim: true
   },
   
   bankName: {
     type: String,
-    required: true,
+    required: false,
     trim: true
   },
   
   accountName: {
     type: String,
-    required: true,
+    required: false,
     trim: true
   },
   

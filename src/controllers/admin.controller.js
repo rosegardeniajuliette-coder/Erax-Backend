@@ -69,7 +69,7 @@ export const registerAdmin = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ ADMIN REGISTER ERROR:', error);
+    console.error(' ADMIN REGISTER ERROR:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to register admin',
@@ -455,7 +455,7 @@ export const getDashboardStats = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ GET STATS ERROR:", error);
+    console.error(" GET STATS ERROR:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch dashboard stats",
@@ -464,9 +464,10 @@ export const getDashboardStats = async (req, res) => {
   }
 };
 
+// ✅ UPDATED: Send all crypto withdrawal details to admin frontend
 export const getPendingActions = async (req, res) => {
   try {
-    console.log(" Fetching pending actions...");
+    console.log("🔄 Fetching pending actions...");
 
     const [pendingDeposits, pendingWithdrawals, pendingVerifications] = await Promise.all([
       Deposit.find({ status: 'pending' })
@@ -502,21 +503,28 @@ export const getPendingActions = async (req, res) => {
           screenshotPath: d.screenshotPath
         }
       })),
+      
+      // ✅ UPDATED: Explicitly send all crypto details to the admin frontend
       ...pendingWithdrawals.map(w => ({
         id: w._id,
         type: 'withdrawal',
         user: w.user,
         amount: w.amount,
-        currency: w.cryptocurrency || w.currency,
+        currency: w.cryptocurrency || 'Unknown', 
         status: w.status,
         createdAt: w.requestedAt || w.createdAt,
         details: {
           transactionId: w.transactionId,
+          // ✅ Crypto Details (Primary)
+          walletAddress: w.walletAddress || 'N/A',
+          cryptocurrency: w.cryptocurrency || 'N/A',
+          network: w.network || 'N/A',
+          // ✅ Bank Details (Fallback, will be undefined for crypto)
           bankName: w.bankName,
-          accountNumber: w.accountNumber,
-          walletAddress: w.walletAddress
+          accountNumber: w.accountNumber
         }
       })),
+      
       ...pendingVerifications.map(u => ({
         id: u._id,
         type: 'verification',
@@ -713,7 +721,7 @@ export const getUserDetails = async (req, res) => {
   try {
     const { id } = req.params;
 
-    console.log(`👤 [GET USER DETAILS] ID: ${id}`);
+    console.log(` [GET USER DETAILS] ID: ${id}`);
 
     const user = await User.findById(id).select('-password -otp -otpExpires');
     if (!user) {
@@ -815,7 +823,7 @@ export const toggleUserStatus = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ TOGGLE USER ERROR:", error);
+    console.error(" TOGGLE USER ERROR:", error);
     res.status(500).json({
       success: false,
       message: "Failed to update user status",
